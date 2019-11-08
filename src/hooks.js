@@ -7,6 +7,7 @@ import {
   useState,
 } from 'react';
 import EasyPeasyContext from './context';
+import { shallowEqual } from './lib';
 
 // React currently throws a warning when using useLayoutEffect on the server.
 // To get around it, we can conditionally useEffect on the server (no-op) and
@@ -20,7 +21,12 @@ const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 export function createStoreStateHook(Context) {
-  return function useStoreState(mapState) {
+  return function useStoreState(mapState, opts = {}) {
+    const options = {
+      shallowEquality: false,
+      ...opts,
+    };
+
     const store = useContext(Context);
     const mapStateRef = useRef(mapState);
     const stateRef = useRef();
@@ -57,9 +63,13 @@ export function createStoreStateHook(Context) {
       const checkMapState = () => {
         try {
           const newState = mapStateRef.current(store.getState());
-          if (newState === stateRef.current) {
+
+          if (options.shallowEquality) {
+            if (shallowEqual(stateRef.current, newState)) return;
+          } else if (newState === stateRef.current) {
             return;
           }
+
           stateRef.current = newState;
         } catch (err) {
           // see https://github.com/reduxjs/react-redux/issues/1179
