@@ -45,6 +45,44 @@ test('dispatches actions to represent a succeeded thunk', () => {
   expect(actualResult).toBe('did something');
 });
 
+test('returning falsey from thunk', async () => {
+  // arrange
+  const err = new Error('error');
+  const model = {
+    foo: {
+      doSomething: thunk(async () => {
+        err.doNotThrow = true;
+        throw err;
+      }),
+    },
+  };
+  const trackActions = trackActionsMiddleware();
+  const store = createStore(model, { middleware: [trackActions] });
+  const payload = 'a payload';
+
+  // act
+  try {
+    await store.getActions().foo.doSomething(payload);
+  } catch (e) {
+    // assert
+    expect(trackActions.actions).toEqual([
+      { type: '@thunk.foo.doSomething(start)', payload },
+      {
+        type: '@thunk.foo.doSomething(fail)',
+        payload,
+        error: err,
+      },
+      {
+        type: '@thunk.foo.doSomething',
+        payload,
+        error: err,
+      },
+    ]);
+
+    expect(e).toBe(false);
+  }
+});
+
 describe('errors', () => {
   test('dispatches actions to represent a failed thunk', async () => {
     // arrange

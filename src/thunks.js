@@ -86,9 +86,11 @@ export function createThunkActionsCreator(
           })
           .catch(err => {
             dispatchError(err);
+            if (err.doNotThrow) return err;
             throw err;
           });
       }
+
       dispatchSuccess(result);
       return result;
     } catch (err) {
