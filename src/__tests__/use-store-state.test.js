@@ -11,6 +11,7 @@ import {
   StoreProvider,
   useStoreActions,
   computed,
+  shallowEqual,
 } from '../index';
 
 class ErrorBoundary extends React.Component {
@@ -304,7 +305,7 @@ test('equality function', () => {
         count: state.count,
         firstName: state.firstName,
       }),
-      { shallowEquality: true },
+      shallowEqual,
     );
     renderSpy();
     return (
